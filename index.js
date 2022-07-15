@@ -15,26 +15,44 @@ app.use((req, res, next) => {
     next();
 });
 
-const msg = {
-  to: 'test@example.com',
-  from: 'test@example.com', // Use the email address or domain you verified above
-  subject: 'Sending with Twilio SendGrid is Fun',
-  text: 'and easy to do anywhere, even with Node.js',
-  html: '<strong>and easy to do anywhere, even with Node.js</strong>',
-};
+function composeMessage(
+    destinationEmail = 'test@example.com',
+    subject = 'Sending with Twilio SendGrid is Fun',
+    text = 'and easy to do anywhere, even with Node.js'
+    ) {
+  const message =  {
+        to: destinationEmail,
+        from: process.env.SOURCE_EMAIL, // Use the email address or domain you verified above
+        subject: subject,
+        text: text,
+        html: '<strong>and easy to do anywhere, even with Node.js</strong>',
+    };
+    console.log(message);
+    return message;
+}
 
 app.get('/', (req, res) => {
     res.status(200).send('Our api is working fine');
 });
 
-app.get('/send-mail', (req, res) => {
+app.post('/send-mail', (req, res) => {
     sgMail
-        .send(msg)
-        .then(() => {}, error => {
+        .send(composeMessage(
+            req.body.destinationEmail,
+            req.body.subject,
+            req.body.text
+        ))
+        .then(() => {
+            console.log('message sent');
+            res.status(200).send({
+                message: 'mail sent successfully'
+            });
+        }, error => {
              console.error(error);
             if (error.response) {
                 console.error(error.response.body)
             }
+            res.status(501).send(error.message);
         }
     );
 });
